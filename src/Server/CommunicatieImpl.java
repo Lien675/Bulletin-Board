@@ -5,7 +5,7 @@ import Interface.Communicatie;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
- 
+
 public class CommunicatieImpl extends UnicastRemoteObject implements Communicatie {
     Set<String> gebruikers = new HashSet<>();
     Map<String, Queue<String>> berichten = new HashMap<>();
