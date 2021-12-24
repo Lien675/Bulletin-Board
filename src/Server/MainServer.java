@@ -3,7 +3,7 @@ package Server;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
-public class MainServer {
+public class MainServer  {
     public static void main(String[] args){
         try {
             // create on port 1099
