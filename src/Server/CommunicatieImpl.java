@@ -11,8 +11,9 @@ public class CommunicatieImpl extends UnicastRemoteObject implements Communicati
 //    Set<String> gebruikers = new HashSet<>();
 //    Map<String, Queue<String>> berichten = new HashMap<>();
 
-    List<Map<Integer,String>> board = new ArrayList<>();
+    List<Map<String,byte[]>> board = new ArrayList<>();
 
+    Map<String,SecretKey> bumpValues = new HashMap<>();
 
     protected CommunicatieImpl() throws RemoteException {
         for(int i=0;i<10;i++){
@@ -28,7 +29,9 @@ public class CommunicatieImpl extends UnicastRemoteObject implements Communicati
 
     @Override
     // stuurt bericht naar de client
-    public synchronized String ontvangBericht(int tag, int index) throws RemoteException {
+    public synchronized byte[] ontvangBericht(String tag, int index) throws RemoteException {
+        System.out.println("IN ONTVANG BERICHT IN IMPL VOOR TAG "+tag);
+
         int moduloIndex = index % board.size();
         board.get(moduloIndex).get(tag);
 
@@ -40,7 +43,9 @@ public class CommunicatieImpl extends UnicastRemoteObject implements Communicati
                 System.out.println(Arrays.toString(e.getStackTrace()));
             }
         }
-        String hashedBericht = board.get(moduloIndex).get(tag);
+
+        System.out.println("UIT WAIT IN ONTVANG BERICHT GERAAKT");
+        byte[] hashedBericht = board.get(moduloIndex).get(tag);
         board.get(moduloIndex).remove(tag);
         return hashedBericht;
 
@@ -64,20 +69,48 @@ public class CommunicatieImpl extends UnicastRemoteObject implements Communicati
 
     @Override
     // client stuurt bericht
-    public synchronized void stuurBericht(String bericht, int tag, int index) throws RemoteException {
+    public synchronized void stuurBericht(byte[] bericht, String tag, int index) throws RemoteException {
 //        for (Queue<String> q : berichten.values()) {
 //            q.add(naam + ": " + bericht);
 //        }
+        System.out.println("IN STUUR BERICHT MET BERICHT "+bericht);
         int moduloIndex = index % board.size();
         board.get(moduloIndex).put(tag,bericht);
 
         notifyAll();
     }
 
-    public synchronized String[] bump(SecretKey eigenSecretKey, int eigenIndex, int eigenTag) throws RemoteException{
-        //TODO
+
+
+    public synchronized void bumpDeel1(SecretKey eigenSecretKey, int eigenIndex, int eigenTag) throws RemoteException {
+        System.out.println("IN BUMPDEEL1 MET TAG "+eigenTag);
+        String together =  eigenTag + "-" + eigenIndex;
+        bumpValues.put(together,eigenSecretKey);
+
+        notifyAll();
+    }
+
+    public synchronized Map<String,SecretKey> bumpDeel2(String eigenTagEnIndex) throws RemoteException{
+        System.out.println("IN BUMPDEEL2 MET TAG "+eigenTagEnIndex);
+        while (bumpValues.size()<2){
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                System.out.println(Arrays.toString(e.getStackTrace()));
+            }
+        }
+
+        for(String tag: bumpValues.keySet()){
+            if(!eigenTagEnIndex.contentEquals(tag)){
+                System.out.println("BUMP GELUKT IN IMPL VOOR KLANT MET TAG = "+eigenTagEnIndex);
+                Map<String, SecretKey> tempMap = new HashMap<>();
+                tempMap.put(tag,bumpValues.get(tag));
+                return tempMap;
+            }
+        }
 
 
         return null;
     }
+
 }

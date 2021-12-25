@@ -22,9 +22,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Random;
+import java.util.*;
 
 public class  MainClient {
 
@@ -32,7 +30,10 @@ public class  MainClient {
     public static final String AES = "AES";
     // We are using a Block cipher(CBC mode)
     private static final String AES_CIPHER_ALGORITHM = "AES/CBC/PKCS5PADDING";
-    static Random random = new Random(4);
+    static Random random = new Random((long) (Math.random()*10));
+
+    //TODO: FIX
+    static final byte[] initializationVector = {-117, -123, 46, 60, 107, 12, 118, -119, -11, -59, 61, 124, -28, 53, 4, 43};//createInitializationVector();
 
     // Function to create a secret key
     public static SecretKey createAESKey() throws Exception {
@@ -49,19 +50,22 @@ public class  MainClient {
         // with 256 bits.
         keygenerator.init(256, securerandom);
         SecretKey key = keygenerator.generateKey();
+
+        System.out.println("KEY = "+DatatypeConverter.printHexBinary(key.getEncoded()));
+
         return key;
     }
 
     // Function to initialize a vector with an arbitrary value
-    public static byte[] createInitializationVector()
-    {
+    public static byte[] createInitializationVector() {
 
         // Used with encryption
-        byte[] initializationVector
-                = new byte[16];
-        SecureRandom secureRandom
-                = new SecureRandom();
+        byte[] initializationVector = new byte[16];
+        SecureRandom secureRandom = new SecureRandom();
         secureRandom.nextBytes(initializationVector);
+
+        System.out.println("INITIALIZATION VECTOR: "+ Arrays.toString(initializationVector));
+
         return initializationVector;
     }
 
@@ -164,48 +168,56 @@ public class  MainClient {
         int partnersTag;
         Communicatie impl;
         boolean gebumped;
+        String naam = null;
+
 
         public Client(Communicatie com) throws Exception {
             eigenSecretKey = createAESKey();
             //random index voor eerste bericht
-            eigenIndex = random.nextInt(); //bound moet waarschijnlijk = lengte van board
+            eigenIndex = Math.abs( random.nextInt()); //bound moet waarschijnlijk = lengte van board
             //random tag voor bericht voor eerste bericht
-            eigenTag = random.nextInt();
+            eigenTag = Math.abs( random.nextInt());
 
             impl = com;
             gebumped = false;
         }
 
-        public void clientBump() throws RemoteException {
-            String[] result = impl.bump(eigenSecretKey,eigenIndex,eigenTag); //TODO
 
-            byte[]decodedKey = Base64.getDecoder().decode(result[0]);
-            partnersSecretKey = new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
-            partnersIndex = Integer.parseInt( result[1]);
-            partnersTag = Integer.parseInt(result[2]);
+        //TODO: DEZE METHODE IS TIJDELIJK TER VERVANGING VAN EEN SHORT RANGE TRANSMISSION PROTOCOL
+        public void clientBump() throws RemoteException {
+
+            impl.bumpDeel1(eigenSecretKey,eigenIndex,eigenTag);
+
+            Map<String,SecretKey> bumpResult = impl.bumpDeel2(eigenTag + "-" + eigenIndex);
+
+            for(String partnerTagEnIndex: bumpResult.keySet()){
+                partnersSecretKey = bumpResult.get(partnerTagEnIndex);
+                String[] split = partnerTagEnIndex.split("-");
+                partnersTag = Integer.parseInt(split[0]);
+                partnersIndex = Integer.parseInt(split[1]);
+                System.out.println("Parnters key = "+(DatatypeConverter.printHexBinary(partnersSecretKey.getEncoded())));
+            }
 
             gebumped = true;
         }
-
-        public boolean getGebumped(){return gebumped;}
 
         public String clientReceive() throws Exception {
 
             //neem hash van partners tag
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hashedTag = digest.digest(Integer.toString(partnersTag).getBytes());
-            int hashedTagInt = Integer.parseInt(DatatypeConverter.printHexBinary(hashedTag));
+            String hashedStringTag = DatatypeConverter.printHexBinary(hashedTag);
+           // long hashedTagLong = Long.parseLong(DatatypeConverter.printHexBinary(hashedTag));
 
             //returned string zodra bericht aanwezig op plaats partnersIndex met key partnersTag
-            String u = impl.ontvangBericht(hashedTagInt,partnersIndex);
+            byte[] u = impl.ontvangBericht(hashedStringTag,partnersIndex);
 
             //decrypt bericht
-            byte[] initializationVector = createInitializationVector();  //TODO: dit is eigelijk fout, want moet gelijk zijn aan vector die andere gebruikte voor encriptie denk ik
-            String decryptedMessage = do_AESDecryption(u.getBytes(StandardCharsets.UTF_8),partnersSecretKey,initializationVector);
+            String decryptedMessage = do_AESDecryption(u,partnersSecretKey,initializationVector);
             String[] decryptedParts = decryptedMessage.split("-");
-
+            System.out.println("DECRYPTED MESSAGE IN RECEIVE: "+decryptedMessage);
             //als er geen 3 delen aanwezig zijn, is er iets fout gegaan
-            if(decryptedParts.length!=3) return "";
+            //if(decryptedParts.length!=3) return "";
 
             //haal delen uit bericht
             String message = decryptedParts[0];
@@ -218,28 +230,35 @@ public class  MainClient {
             byte[] newPartnersSecretKeyBytes = deriveKey(partnersSecretKey,192);
             partnersSecretKey = new SecretKeySpec(newPartnersSecretKeyBytes, 0, newPartnersSecretKeyBytes.length, "AES");
 
+
+            System.out.println("ONTVANGEN BERICHT: "+message);
             return message;
         }
 
         public void clientSend(String message) throws Exception {
 
             //random index voor volgende bericht
-            int idxab = random.nextInt(); //bound moet misschien = lengte van board
+            int idxab = Math.abs( random.nextInt()); //bound moet misschien = lengte van board
             //random tag voor bericht voor volgende bericht
-            int tagab = random.nextInt();
+            int tagab = Math.abs( random.nextInt());
 
             //versleutel message samen met index en tag van volgend bericht
             String allTogether = message +"-"+ idxab + "-"+ tagab;
-            byte[] initializationVector = createInitializationVector();
+//            byte[] initializationVector = createInitializationVector();
             byte[] cipherText = do_AESEncryption(allTogether, eigenSecretKey, initializationVector);
+
+            //probeersel
+            String temp = do_AESDecryption(cipherText,eigenSecretKey,initializationVector);
+            System.out.println("DECRYPTION EMMEDIATLY AFTER ENCRYPTION: "+temp);
 
             //hash tag:
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hashedTag = digest.digest(Integer.toString(eigenTag).getBytes());
-            int hashedTagInt = Integer.parseInt(DatatypeConverter.printHexBinary(hashedTag));
+            String hashedStringTag = DatatypeConverter.printHexBinary(hashedTag);
+            //int hashedTagInt = Integer.parseInt(DatatypeConverter.printHexBinary(hashedTag));
 
             //stuur bericht
-            impl.stuurBericht(Arrays.toString(cipherText),hashedTagInt,eigenIndex);
+            impl.stuurBericht(cipherText,hashedStringTag,eigenIndex);
 
             //update eigen waarden en key
             eigenIndex = idxab;
@@ -254,8 +273,6 @@ public class  MainClient {
 
     public static void main(String[] args) throws Exception {
 
-        var wrapper = new Object(){ String gebruiker = null; };
-
         // fire to localhost port 1099
         Registry myRegistry = LocateRegistry.getRegistry("localhost", 1099);
 
@@ -263,7 +280,31 @@ public class  MainClient {
         Communicatie impl = (Communicatie) myRegistry.lookup("CommService");
 
         Client klant = new Client(impl);
+        klant.clientBump();
 
+        // Text Area at the Center
+        JTextArea ta = new JTextArea();
+
+        Thread t = new Thread(() -> {
+            while (true) {
+                System.out.println("IN WHILE");
+                if (klant.gebumped) {
+                    String bericht;
+                    try {
+                        bericht = klant.clientReceive();
+                        System.out.println("BERICHT IN WHILE" +bericht );
+                        ta.append("Chat partner: "+bericht);
+                        ta.append("\n");
+                        System.out.println(bericht);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                }
+            }
+        });
+
+        t.start();
 
         //GUI
         JFrame frame = new JFrame("Chat Frame");
@@ -277,34 +318,22 @@ public class  MainClient {
         JButton send = new JButton("Send");
         send.addActionListener(e -> {
             String s = tf.getText();
-            if (s != null){
-//                if (wrapper.gebruiker == null) {
-//                    wrapper.gebruiker = s;
-//
-//                    System.out.println(wrapper.gebruiker);
-//                    try {
-//                        impl.voegGebruikerToe(wrapper.gebruiker);
-//                    } catch (RemoteException ex) {
-//                        ex.printStackTrace();
-//                    }
-//                }
-//                else {
+            if (s != null && klant.gebumped){
+
                     try {
+                        System.out.println("BERICHT IN ACTIONLISTENER: "+s);
+                        ta.append("ik: "+s);
+                        ta.append("\n");
                         klant.clientSend(s);
-//                        impl.stuurBericht(s, wrapper.gebruiker);
-                    } catch (RemoteException ex) {
+                    } catch (Exception ex) {
                         ex.printStackTrace();
-                    } catch (Exception exception) {
-                        exception.printStackTrace();
                     }
-//                }
 
                 tf.setText("");
             }
         });
 
-        // Text Area at the Center
-        JTextArea ta = new JTextArea();
+
 
         JButton reset = new JButton("Reset");
         panel.add(label); // Components Added using Flow Layout
@@ -318,21 +347,6 @@ public class  MainClient {
         frame.getContentPane().add(BorderLayout.CENTER, ta);
         frame.setVisible(true);
 
-
-        // Display incomming
-                while (true) {
-//                   if (wrapper.gebruiker != null) {
-                        String bericht = null;
-                        try {
-                            bericht = klant.clientReceive();
-//                            bericht = impl.ontvangBericht(wrapper.gebruiker);
-                            System.out.println(bericht);
-                        } catch (RemoteException e) {
-                            e.printStackTrace();
-                        }
-                        ta.append(bericht);
-//                    }
-                }
 
 
         //keys:
