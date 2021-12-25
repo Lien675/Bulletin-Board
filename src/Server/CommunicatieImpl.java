@@ -2,6 +2,7 @@ package Server;
 
 import Interface.Communicatie;
 
+import javax.crypto.SecretKey;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
@@ -73,7 +74,10 @@ public class CommunicatieImpl extends UnicastRemoteObject implements Communicati
         notifyAll();
     }
 
-    public synchronized void bump(String naam) throws RemoteException{//naam van andere persoon waar je mee wil uitwisselen
+    public synchronized String[] bump(SecretKey eigenSecretKey, int eigenIndex, int eigenTag) throws RemoteException{
+        //TODO
 
+
+        return null;
     }
 }
