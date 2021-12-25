@@ -191,8 +191,13 @@ public class  MainClient {
 
         public String clientReceive() throws Exception {
 
+            //neem hash van partners tag
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hashedTag = digest.digest(Integer.toString(partnersTag).getBytes());
+            int hashedTagInt = Integer.parseInt(DatatypeConverter.printHexBinary(hashedTag));
+
             //returned string zodra bericht aanwezig op plaats partnersIndex met key partnersTag
-            String u = impl.ontvangBericht(partnersTag,partnersIndex);
+            String u = impl.ontvangBericht(hashedTagInt,partnersIndex);
 
             //decrypt bericht
             byte[] initializationVector = createInitializationVector();  //TODO: dit is eigelijk fout, want moet gelijk zijn aan vector die andere gebruikte voor encriptie denk ik
