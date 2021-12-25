@@ -12,6 +12,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.swing.*;
 import javax.xml.bind.DatatypeConverter;
 import java.awt.*;
+import java.nio.charset.StandardCharsets;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -21,6 +22,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Random;
 
@@ -102,34 +104,85 @@ public class  MainClient {
         return key.getEncoded();
     }
 
-    public static void send(int index, int tag, String message, SecretKey Kab) throws Exception {
+    public static void send(int index, int tag, String message, SecretKey Kab,Communicatie impl) throws Exception {
         //random index voor volgende bericht
         int idxab = random.nextInt(); //bound moet waarschijnlijk = lengte van board
         //random tag voor bericht voor volgende bericht
         int tagab = random.nextInt();
 
-        String allTogether = message + Integer.toString(idxab) + Integer.toString(tagab);
+        String allTogether = message +"-"+ idxab + "-"+ tagab;
         byte[] initializationVector = createInitializationVector();
         byte[] cipherText = do_AESEncryption(allTogether, Kab, initializationVector);
 
         //hash tag:
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] hashedTag = digest.digest(Integer.toString(tag).getBytes());
+        int hashedTagInt = Integer.parseInt(DatatypeConverter.printHexBinary(hashedTag));
+        impl.stuurBericht(Arrays.toString(cipherText),hashedTagInt,index);
 
-        write(index,cipherText,hashedTag);
-
+        //TODO
         //this.indexab = idxab
         //this.tagab = tagab
         //Kab = deriveKey(Kab)
     }
 
-    public static void write(int index, byte[]encryptedMessage , byte[] hashedTag){
 
+
+    public static String receive(SecretKey partnersKey, int partnersIndex, int partnersTag,Communicatie impl) throws Exception {
+        String u = impl.ontvangBericht(partnersTag,partnersIndex);
+
+        //TODO: dit is eigelijk fout, want moet gelijk zijn aan vector die andere gebruikte voor encriptie denk ik
+        byte[] initializationVector = createInitializationVector();
+        String decryptedMessage = do_AESDecryption(u.getBytes(StandardCharsets.UTF_8),partnersKey,initializationVector);
+        String[] decryptedParts = decryptedMessage.split("-");
+        if(decryptedParts.length!=3) return ""; //dan is er iets fout gegaan
+        String message = decryptedParts[0];
+        int nieuwePartnerIndex = Integer.parseInt(decryptedParts[1]);
+        int nieuwePartnerTag = Integer.parseInt(decryptedParts[2]);
+
+        //TODO
+        //this.partnersKey = deriveKey(partnersKey);
+        //this.partnersIndex = nieuwePartnerIndex;
+        //this.partnersTag = nieuwePartnerTag;
+        return message;
     }
 
+    public static String[] bump(SecretKey eigenKey, int eigenIndex, int eigenTag,Communicatie impl){
+        String[] keyExchangeResult = new String[3];
+
+        //TODO
+        keyExchangeResult = impl.bump();
+
+        return keyExchangeResult;
+    }
+    class Client{
+        SecretKey eigenSecretKey;
+        SecretKey partnersSecretKey;
+        int eigenIndex;
+        int partnersIndex;
+        int eigenTag;
+        int PartnersTag;
+        Communicatie impl;
+        public Client(Communicatie com) throws Exception {
+            eigenSecretKey = createAESKey();
+            //random index voor eerste bericht
+            eigenIndex = random.nextInt(); //bound moet waarschijnlijk = lengte van board
+            //random tag voor bericht voor eerste bericht
+            eigenTag = random.nextInt();
+
+            impl = com;
+        }
+
+        public void clientBump(){
+            String[] result = bump(eigenSecretKey,eigenIndex,eigenTag,impl);
+            byte[]decodedKey = Base64.getDecoder().decode(result[0]);
+            partnersSecretKey = new SecretKeySpec(decodedKey, 0, decodedKey.length, "AES");
+            partnersIndex = Integer.parseInt( result[1]);
+            PartnersTag = Integer.parseInt(result[2]);
+        }
 
 
-
+    }
 
     public static void main(String[] args) throws Exception {
 
@@ -210,35 +263,35 @@ public class  MainClient {
 
 
         //keys:
-        SecretKey Symmetrickey = createAESKey();
-        System.out.println("The Symmetric Key is :" + DatatypeConverter.printHexBinary(Symmetrickey.getEncoded()));
-
-        byte[] initializationVector = createInitializationVector();
-
-        String plainText = "This is the message I want To Encrypt.";
-
-        // Encrypting the message using the symmetric key
-        byte[] cipherText = do_AESEncryption(plainText, Symmetrickey, initializationVector);
-
-        System.out.println("The ciphertext or Encrypted Message is: " + DatatypeConverter.printHexBinary(cipherText));
-
-        // Decrypting the encrypted message
-        String decryptedText = do_AESDecryption(cipherText, Symmetrickey, initializationVector);
-
-        System.out.println("Your original message is: " + decryptedText);
-
-        System.out.println("derived key: ");
-        byte[]derivedkeybyte = deriveKey(Symmetrickey,192);
-        SecretKey derivedKey = new SecretKeySpec(derivedkeybyte, 0, derivedkeybyte.length, "AES");
-        System.out.println(DatatypeConverter.printHexBinary(derivedKey.getEncoded()));
-
-        //Uit te wisselen waarden in key exchange:
-        //symmetrische sleutel
-        SecretKey Kab = Symmetrickey;
-        //random index voor eerste bericht
-        int idxab = random.nextInt(); //bound moet waarschijnlijk = lengte van board
-        //random tag voor bericht voor eerste bericht
-        int tagab = random.nextInt();
+//        SecretKey Symmetrickey = createAESKey();
+//        System.out.println("The Symmetric Key is :" + DatatypeConverter.printHexBinary(Symmetrickey.getEncoded()));
+//
+//        byte[] initializationVector = createInitializationVector();
+//
+//        String plainText = "This is the message I want To Encrypt.";
+//
+//        // Encrypting the message using the symmetric key
+//        byte[] cipherText = do_AESEncryption(plainText, Symmetrickey, initializationVector);
+//
+//        System.out.println("The ciphertext or Encrypted Message is: " + DatatypeConverter.printHexBinary(cipherText));
+//
+//        // Decrypting the encrypted message
+//        String decryptedText = do_AESDecryption(cipherText, Symmetrickey, initializationVector);
+//
+//        System.out.println("Your original message is: " + decryptedText);
+//
+//        System.out.println("derived key: ");
+//        byte[]derivedkeybyte = deriveKey(Symmetrickey,192);
+//        SecretKey derivedKey = new SecretKeySpec(derivedkeybyte, 0, derivedkeybyte.length, "AES");
+//        System.out.println(DatatypeConverter.printHexBinary(derivedKey.getEncoded()));
+//
+//        //Uit te wisselen waarden in key exchange:
+//        //symmetrische sleutel
+//        SecretKey Kab = Symmetrickey;
+//        //random index voor eerste bericht
+//        int idxab = random.nextInt(); //bound moet waarschijnlijk = lengte van board
+//        //random tag voor bericht voor eerste bericht
+//        int tagab = random.nextInt();
 
 
     }

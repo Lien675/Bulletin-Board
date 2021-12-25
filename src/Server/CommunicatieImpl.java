@@ -5,10 +5,10 @@ import Interface.Communicatie;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
- 
+
 public class CommunicatieImpl extends UnicastRemoteObject implements Communicatie {
-    Set<String> gebruikers = new HashSet<>();
-    Map<String, Queue<String>> berichten = new HashMap<>();
+//    Set<String> gebruikers = new HashSet<>();
+//    Map<String, Queue<String>> berichten = new HashMap<>();
 
     List<Map<Integer,String>> board = new ArrayList<>();
 
@@ -30,11 +30,13 @@ public class CommunicatieImpl extends UnicastRemoteObject implements Communicati
     public synchronized String ontvangBericht(int tag, int index) throws RemoteException {
         int moduloIndex = index % board.size();
         board.get(moduloIndex).get(tag);
+
+        //wacht als geen bericht aanwezig is op plaats index, met key = tag
         while (!board.get(moduloIndex).containsKey(tag)){
             try {
                 wait();
             } catch (InterruptedException e) {
-                System.out.println(e.getStackTrace());
+                System.out.println(Arrays.toString(e.getStackTrace()));
             }
         }
         String hashedBericht = board.get(moduloIndex).get(tag);
@@ -57,7 +59,6 @@ public class CommunicatieImpl extends UnicastRemoteObject implements Communicati
 //        berichten.get(gebruiker).clear();
 //        return sb.toString();
 
-    return "";
     }
 
     @Override
