@@ -33,7 +33,6 @@ public class  MainClient {
     static Random random = new Random((long) (Math.random()*10));
 
     //TODO: FIX (dit mag denk ik niet hard gecodeert maar werkt voorlopig anders niet)
-    static final byte[] initializationVector = {-117, -123, 46, 60, 107, 12, 118, -119, -11, -59, 61, 124, -28, 53, 4, 43};//createInitializationVector();
 
     // Function to create a secret key
     public static SecretKey createAESKey() throws Exception {
@@ -57,11 +56,11 @@ public class  MainClient {
     }
 
     // Function to initialize a vector with an arbitrary value
-    public static byte[] createInitializationVector() {
+    public static byte[] createInitializationVector(SecretKey key) {
 
         // Used with encryption
         byte[] initializationVector = new byte[16];
-        SecureRandom secureRandom = new SecureRandom();
+        SecureRandom secureRandom = new SecureRandom(key.getEncoded());
         secureRandom.nextBytes(initializationVector);
 
         System.out.println("INITIALIZATION VECTOR: "+ Arrays.toString(initializationVector));
@@ -70,8 +69,10 @@ public class  MainClient {
     }
 
     // This function takes plaintext, the key with an initialization vector to convert plainTex into CipherText.
-    public static byte[] do_AESEncryption(String plainText, SecretKey secretKey, byte[] initializationVector)
+    public static byte[] do_AESEncryption(String plainText, SecretKey secretKey)
             throws Exception {
+
+        byte[] initializationVector = createInitializationVector(secretKey);
         Cipher cipher = Cipher.getInstance(AES_CIPHER_ALGORITHM);
 
         IvParameterSpec ivParameterSpec = new IvParameterSpec(initializationVector);
@@ -83,8 +84,9 @@ public class  MainClient {
 
     //This function performs the reverse operation of the do_AESEncryption function.
     // It converts ciphertext to the plaintext using the key.
-    public static String do_AESDecryption(byte[] cipherText, SecretKey secretKey, byte[] initializationVector)
+    public static String do_AESDecryption(byte[] cipherText, SecretKey secretKey)
             throws Exception {
+        byte[] initializationVector = createInitializationVector(secretKey);
         Cipher cipher = Cipher.getInstance(AES_CIPHER_ALGORITHM);
 
         IvParameterSpec ivParameterSpec = new IvParameterSpec(initializationVector);
@@ -161,7 +163,7 @@ public class  MainClient {
             byte[] u = impl.ontvangBericht(hashedStringTag,partnersIndex);
 
             //decrypt bericht
-            String decryptedMessage = do_AESDecryption(u,partnersSecretKey,initializationVector);
+            String decryptedMessage = do_AESDecryption(u,partnersSecretKey);
             String[] decryptedParts = decryptedMessage.split("-");
             System.out.println("DECRYPTED MESSAGE IN RECEIVE: "+decryptedMessage);
             //als er geen 3 delen aanwezig zijn, is er iets fout gegaan
@@ -193,11 +195,7 @@ public class  MainClient {
             //versleutel message samen met index en tag van volgend bericht
             String allTogether = message +"-"+ idxab + "-"+ tagab;
 //            byte[] initializationVector = createInitializationVector();
-            byte[] cipherText = do_AESEncryption(allTogether, eigenSecretKey, initializationVector);
-
-            //probeersel
-            String temp = do_AESDecryption(cipherText,eigenSecretKey,initializationVector);
-            System.out.println("DECRYPTION EMMEDIATLY AFTER ENCRYPTION: "+temp);
+            byte[] cipherText = do_AESEncryption(allTogether, eigenSecretKey);
 
             //hash tag:
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
@@ -228,7 +226,6 @@ public class  MainClient {
         Communicatie impl = (Communicatie) myRegistry.lookup("CommService");
 
         Client klant = new Client(impl);
-        klant.clientBump();
 
         // Text Area at the Center
 
@@ -299,6 +296,10 @@ public class  MainClient {
         frame.getContentPane().add(BorderLayout.CENTER, ta);
         frame.setVisible(true);
         clear.addActionListener(e -> ta.setText(""));
+
+
+
+        klant.clientBump();
 
 
 
