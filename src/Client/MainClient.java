@@ -32,7 +32,7 @@ public class  MainClient {
     private static final String AES_CIPHER_ALGORITHM = "AES/CBC/PKCS5PADDING";
     static Random random = new Random((long) (Math.random()*10));
 
-    //TODO: FIX
+    //TODO: FIX (dit mag denk ik niet hard gecodeert maar werkt voorlopig anders niet)
     static final byte[] initializationVector = {-117, -123, 46, 60, 107, 12, 118, -119, -11, -59, 61, 124, -28, 53, 4, 43};//createInitializationVector();
 
     // Function to create a secret key
@@ -107,57 +107,6 @@ public class  MainClient {
         return key.getEncoded();
     }
 
-//    public static void send(int index, int tag, String message, SecretKey Kab,Communicatie impl) throws Exception {
-//        //random index voor volgende bericht
-//        int idxab = random.nextInt(); //bound moet waarschijnlijk = lengte van board
-//        //random tag voor bericht voor volgende bericht
-//        int tagab = random.nextInt();
-//
-//        String allTogether = message +"-"+ idxab + "-"+ tagab;
-//        byte[] initializationVector = createInitializationVector();
-//        byte[] cipherText = do_AESEncryption(allTogether, Kab, initializationVector);
-//
-//        //hash tag:
-//        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-//        byte[] hashedTag = digest.digest(Integer.toString(tag).getBytes());
-//        int hashedTagInt = Integer.parseInt(DatatypeConverter.printHexBinary(hashedTag));
-//        impl.stuurBericht(Arrays.toString(cipherText),hashedTagInt,index);
-//
-//        //TODO
-//        //this.indexab = idxab
-//        //this.tagab = tagab
-//        //Kab = deriveKey(Kab)
-//    }
-
-
-
-//    public static String receive(SecretKey partnersKey, int partnersIndex, int partnersTag,Communicatie impl) throws Exception {
-//        String u = impl.ontvangBericht(partnersTag,partnersIndex);
-//
-//        //TODO: dit is eigelijk fout, want moet gelijk zijn aan vector die andere gebruikte voor encriptie denk ik
-//        byte[] initializationVector = createInitializationVector();
-//        String decryptedMessage = do_AESDecryption(u.getBytes(StandardCharsets.UTF_8),partnersKey,initializationVector);
-//        String[] decryptedParts = decryptedMessage.split("-");
-//        if(decryptedParts.length!=3) return ""; //dan is er iets fout gegaan
-//        String message = decryptedParts[0];
-//        int nieuwePartnerIndex = Integer.parseInt(decryptedParts[1]);
-//        int nieuwePartnerTag = Integer.parseInt(decryptedParts[2]);
-//
-//        //TODO
-//        //this.partnersKey = deriveKey(partnersKey);
-//        //this.partnersIndex = nieuwePartnerIndex;
-//        //this.partnersTag = nieuwePartnerTag;
-//        return message;
-//    }
-
-//    public static String[] bump(SecretKey eigenKey, int eigenIndex, int eigenTag,Communicatie impl){
-//        String[] keyExchangeResult = new String[3];
-//
-//
-//        keyExchangeResult = impl.bump();
-//
-//        return keyExchangeResult;
-//    }
 
     static class Client{
         SecretKey eigenSecretKey;
@@ -207,7 +156,6 @@ public class  MainClient {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hashedTag = digest.digest(Integer.toString(partnersTag).getBytes());
             String hashedStringTag = DatatypeConverter.printHexBinary(hashedTag);
-           // long hashedTagLong = Long.parseLong(DatatypeConverter.printHexBinary(hashedTag));
 
             //returned string zodra bericht aanwezig op plaats partnersIndex met key partnersTag
             byte[] u = impl.ontvangBericht(hashedStringTag,partnersIndex);
@@ -283,16 +231,20 @@ public class  MainClient {
         klant.clientBump();
 
         // Text Area at the Center
+
         JTextArea ta = new JTextArea();
+        //ta.setBounds(20,75,250,200);
+        ta.setBackground(Color.DARK_GRAY);
+        ta.setForeground(Color.WHITE);
+        ta.setColumns(2);
+        ta.setEditable(false);
 
         Thread t = new Thread(() -> {
             while (true) {
-                System.out.println("IN WHILE");
                 if (klant.gebumped) {
                     String bericht;
                     try {
                         bericht = klant.clientReceive();
-                        System.out.println("BERICHT IN WHILE" +bericht );
                         ta.append("Chat partner: "+bericht);
                         ta.append("\n");
                         System.out.println(bericht);
@@ -321,7 +273,6 @@ public class  MainClient {
             if (s != null && klant.gebumped){
 
                     try {
-                        System.out.println("BERICHT IN ACTIONLISTENER: "+s);
                         ta.append("ik: "+s);
                         ta.append("\n");
                         klant.clientSend(s);
@@ -336,16 +287,18 @@ public class  MainClient {
 
 
         JButton reset = new JButton("Reset");
+        JButton clear = new JButton("Clear");
         panel.add(label); // Components Added using Flow Layout
         panel.add(tf);
         panel.add(send);
         panel.add(reset);
+        panel.add(clear);
         reset.addActionListener(e -> tf.setText(""));
         //Adding Components to the frame.
         frame.getContentPane().add(BorderLayout.SOUTH, panel);
-        //frame.getContentPane().add(BorderLayout.NORTH, mb);
         frame.getContentPane().add(BorderLayout.CENTER, ta);
         frame.setVisible(true);
+        clear.addActionListener(e -> ta.setText(""));
 
 
 
