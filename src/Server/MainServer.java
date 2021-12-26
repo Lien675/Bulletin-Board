@@ -14,6 +14,6 @@ public class MainServer  {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println("system is ready");
+        System.out.println("System is ready");
     }
 }
