@@ -17,13 +17,12 @@ import java.util.Base64;
 
 public class Crypto {
     private static final String AES = "AES";
-    private static final int keySize = 192;
+    private static final int keySize = 256;
     // We are using a Block cipher(CBC mode)
     private static final String AES_CIPHER_ALGORITHM = "AES/CBC/PKCS5PADDING";
 
     // Function to create a secret key
     public static SecretKey createAESKey() throws Exception {
-
         // Creating a new instance of
         // SecureRandom class.
         SecureRandom securerandom = new SecureRandom();
@@ -45,7 +44,6 @@ public class Crypto {
     //TODO: FIX (dit mag denk ik niet hard gecodeert maar werkt voorlopig anders niet)
     // Function to initialize a vector with an arbitrary value
     public static byte[] createInitializationVector(SecretKey key) {
-
         // Used with encryption
         byte[] initializationVector = new byte[16];
         SecureRandom secureRandom = new SecureRandom(key.getEncoded());
@@ -57,9 +55,7 @@ public class Crypto {
     }
 
     // This function takes plaintext, the key with an initialization vector to convert plainTex into CipherText.
-    public static byte[] do_AESEncryption(String plainText, SecretKey secretKey)
-            throws Exception {
-
+    public static byte[] doAESEncryption(String plainText, SecretKey secretKey) throws Exception {
         byte[] initializationVector = createInitializationVector(secretKey);
         Cipher cipher = Cipher.getInstance(AES_CIPHER_ALGORITHM);
 
@@ -72,8 +68,7 @@ public class Crypto {
 
     //This function performs the reverse operation of the do_AESEncryption function.
     // It converts ciphertext to the plaintext using the key.
-    public static String do_AESDecryption(byte[] cipherText, SecretKey secretKey)
-            throws Exception {
+    public static String doAESDecryption(byte[] cipherText, SecretKey secretKey) throws Exception {
         byte[] initializationVector = createInitializationVector(secretKey);
         Cipher cipher = Cipher.getInstance(AES_CIPHER_ALGORITHM);
 
@@ -97,4 +92,5 @@ public class Crypto {
         // We maken een nieuwe sleutel met de byte waarden van de vorige zodat het bijhorende algoritme klopt
         return new SecretKeySpec(newKey, 0, newKey.length, AES);
     }
+
 }
