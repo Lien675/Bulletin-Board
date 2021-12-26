@@ -1,9 +1,7 @@
 package Interface;
 
-import javax.crypto.SecretKey;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.util.Map;
 
 public interface Communicatie extends Remote {
     //void voegGebruikerToe(String naam) throws RemoteException;

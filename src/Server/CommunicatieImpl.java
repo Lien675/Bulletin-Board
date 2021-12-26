@@ -9,9 +9,6 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
 
 public class CommunicatieImpl extends UnicastRemoteObject implements Communicatie {
-//    Set<String> gebruikers = new HashSet<>();
-//    Map<String, Queue<String>> berichten = new HashMap<>();
-
     List<Map<String, byte[]>> board = new ArrayList<>();
 
     protected CommunicatieImpl() throws RemoteException {
@@ -39,31 +36,11 @@ public class CommunicatieImpl extends UnicastRemoteObject implements Communicati
         byte[] hashedBericht = board.get(moduloIndex).get(tag);
         board.get(moduloIndex).remove(tag);
         return hashedBericht;
-
-//        while (berichten.get(gebruiker).isEmpty()) {
-//            try {
-//                wait();
-//            } catch (InterruptedException e) {
-//                System.out.println(e.getStackTrace());
-//            }
-//        }
-//
-//        StringBuilder sb = new StringBuilder();
-//        for (String bericht : berichten.get(gebruiker)) {
-//            sb.append(bericht);
-//            sb.append("\n");
-//        }
-//        berichten.get(gebruiker).clear();
-//        return sb.toString();
-
     }
 
     @Override
     // client stuurt bericht
     public synchronized void stuurBericht(byte[] bericht, String tag, int index) throws RemoteException {
-//        for (Queue<String> q : berichten.values()) {
-//            q.add(naam + ": " + bericht);
-//        }
         System.out.println("IN STUUR BERICHT MET BERICHT " + bericht);
         int moduloIndex = index % board.size();
         board.get(moduloIndex).put(tag, bericht);
@@ -79,7 +56,6 @@ public class CommunicatieImpl extends UnicastRemoteObject implements Communicati
             }
 
         }
-
         notifyAll();
     }
 

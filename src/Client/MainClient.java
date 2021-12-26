@@ -3,17 +3,14 @@ package Client;
 import Interface.Communicatie;
 
 import javax.swing.*;
-import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.awt.event.ActionListener;
-import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
 public class MainClient {
     static Client klant;
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) {
         //GUI
         JFrame frame = new JFrame("Chat Frame");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -132,11 +129,11 @@ public class MainClient {
 //        int tagab = random.nextInt();
     }
 
-    private static void setParams(String naam, String poorttekt, JButton submit, JButton send, Thread updateThread) throws Exception {
+    private static void setParams(String naam, String poorttekst, JButton submit, JButton send, Thread updateThread) throws Exception {
         int poort;
         if (naam.isEmpty() || naam.isBlank()) return;
         try {
-            poort = Integer.parseInt(poorttekt);
+            poort = Integer.parseInt(poorttekst);
 
             // fire to localhost port 1099
             Registry myRegistry = LocateRegistry.getRegistry("localhost", 1099);

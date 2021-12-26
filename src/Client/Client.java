@@ -2,15 +2,14 @@ package Client;
 
 import Interface.Bump;
 import Interface.Communicatie;
-import Server.CommunicatieImpl;
 
 import javax.crypto.SecretKey;
 import javax.xml.bind.DatatypeConverter;
+import java.rmi.ConnectException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.Random;
 
@@ -34,9 +33,9 @@ class Client {
             // Zoek als al iemand verbinding wil maken
             // fire to localhost port
             Registry bumpRegistry = LocateRegistry.getRegistry("localhost", poort);
-            // search for CommService
+            // search for BumpService
             this.bumpImpl = (Bump) bumpRegistry.lookup("BumpService");
-        } catch (Exception e) {
+        } catch (ConnectException e) {
             // Anders zelf hosten
             // create on port
             Registry registry = LocateRegistry.createRegistry(poort);
@@ -44,7 +43,7 @@ class Client {
             registry.rebind("BumpService", new BumpImpl());
             // fire to localhost port
             Registry bumpRegistry = LocateRegistry.getRegistry("localhost", poort);
-            // search for CommService
+            // search for BumpService
             this.bumpImpl = (Bump) bumpRegistry.lookup("BumpService");
         }
 
@@ -62,7 +61,6 @@ class Client {
     public void clientBump() throws RemoteException {
 
         bumpImpl.bumpDeel1(eigenSecretKey, eigenIndex, eigenTag);
-
         Map<String, SecretKey> bumpResult = bumpImpl.bumpDeel2(eigenTag + "-" + eigenIndex);
 
         for (String partnerTagEnIndex : bumpResult.keySet()) {
@@ -110,6 +108,7 @@ class Client {
     public void clientSend(String message) throws Exception {
         // Voeg naam toe aan bericht
         message = naam + ": " + message;
+        message = message.replace('-', '_');
 
         //random index voor volgende bericht
         int idxab = Math.abs(random.nextInt()); //bound moet misschien = lengte van board

@@ -17,7 +17,7 @@ import java.util.Base64;
 
 public class Crypto {
     private static final String AES = "AES";
-    private static final int keySize = 256;
+    private static final int keySize = 192;
     // We are using a Block cipher(CBC mode)
     private static final String AES_CIPHER_ALGORITHM = "AES/CBC/PKCS5PADDING";
 
@@ -46,10 +46,10 @@ public class Crypto {
     public static byte[] createInitializationVector(SecretKey key) {
         // Used with encryption
         byte[] initializationVector = new byte[16];
-        SecureRandom secureRandom = new SecureRandom(key.getEncoded());
-        secureRandom.nextBytes(initializationVector);
-
-        System.out.println("INITIALIZATION VECTOR: " + Arrays.toString(initializationVector));
+//        SecureRandom secureRandom = new SecureRandom(key.getEncoded());
+//        secureRandom.nextBytes(initializationVector);
+//
+//        System.out.println("INITIALIZATION VECTOR: " + Arrays.toString(initializationVector));
 
         return initializationVector;
     }
