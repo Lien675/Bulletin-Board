@@ -29,22 +29,20 @@ class Client {
     boolean gebumped = false;
     String naam;
     boolean isOnline = false;
-
+    int poort;
 
     public Client(String naam, int poort, Communicatie com) throws Exception {
         //check of client al ooit eens gebumped heeft
+        this.poort = poort;
+        boolean ooitAlGebumped = FileBeheer.bestaatFile(naam, poort);
 
-        boolean ooitAlGebumped = FileBeheer.bestaatFile(naam);
+        if (ooitAlGebumped) {
 
-        if(ooitAlGebumped){
-
-            List<String> waarden = FileBeheer.readFromFile(naam);
+            List<String> waarden = FileBeheer.readFromFile(naam, poort);
             setWaarden(waarden);
-            gebumped=true;
+            gebumped = true;
 
-        }
-
-        else{
+        } else {
             try {
                 // Zoek of al iemand verbinding wil maken
                 // fire to localhost port
@@ -89,7 +87,7 @@ class Client {
             System.out.println("Parnters key = " + (DatatypeConverter.printHexBinary(partnersSecretKey.getEncoded())));
         }
 
-        FileBeheer.writeToFile(getWaarenList(),naam);
+        FileBeheer.writeToFile(getWaarenList(), naam, poort);
 
         gebumped = true;
     }
@@ -127,7 +125,7 @@ class Client {
 
         System.out.println("ONTVANGEN BERICHT: " + message);
 
-        FileBeheer.writeToFile(getWaarenList(),naam);
+        FileBeheer.writeToFile(getWaarenList(), naam, poort);
 
         return message;
     }
@@ -161,7 +159,7 @@ class Client {
         eigenTag = tagab;
         eigenSecretKey = deriveKey(eigenSecretKey);
 
-        FileBeheer.writeToFile(getWaarenList(),naam);
+        FileBeheer.writeToFile(getWaarenList(), naam, poort);
 
     }
 

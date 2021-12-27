@@ -37,7 +37,6 @@ public class MainClient {
             Runnable helloRunnable = () -> {
                 if (klant.gebumped /*&& klant.isOnline*/) {
                     String bericht;
-                    System.out.println("in runnable");
                     try {
                         bericht = klant.clientReceive();
                         if(bericht!=null){
