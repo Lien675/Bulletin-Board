@@ -6,17 +6,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class FileBeheer {
-    public static boolean bestaatFile(String naam) throws IOException { //return true als file al bestond
+    public static boolean bestaatFile(String naam, int poort) throws IOException { //return true als file al bestond
 
-        String s = naam +".txt";
+        String s = naam + poort + ".txt";
         File file = new File(s);
 
-        boolean exists= file.exists();
-        if(exists){
+        boolean exists = file.exists();
+        if (exists) {
             System.out.println("file bestond al");
             return true;
-        }
-        else{
+        } else {
             boolean result = file.createNewFile();
 
             if(result) System.out.println("File created");
@@ -27,10 +26,10 @@ public class FileBeheer {
         }
     }
 
-    public static List<String> readFromFile(String naam) throws IOException {
-        List<String > waarden = new ArrayList<>();
+    public static List<String> readFromFile(String naam, int poort) throws IOException {
+        List<String> waarden = new ArrayList<>();
 
-        File file = new File(naam+".txt");
+        File file = new File(naam + poort + ".txt");
 
         BufferedReader br = new BufferedReader(new FileReader(file));
         String st;
@@ -40,19 +39,19 @@ public class FileBeheer {
         return waarden;
     }
 
-    public static void writeToFile(List<String> waarden,String naam) throws IOException {
+    public static void writeToFile(List<String> waarden, String naam, int poort) throws IOException {
         System.out.println("in write to file");
 
         StringBuilder sb = new StringBuilder();
 
-        for(String s: waarden){
+        for (String s : waarden) {
             sb.append(s);
             sb.append("\n");
         }
 
         String waard = sb.toString();
 
-        FileWriter myWriter = new FileWriter(naam+".txt");
+        FileWriter myWriter = new FileWriter(naam + poort + ".txt");
         myWriter.flush();
 
         myWriter.write(waard);

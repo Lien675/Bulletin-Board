@@ -37,7 +37,7 @@ public class MainClient {
             Runnable helloRunnable = () -> {
                 if (klant.gebumped /*&& klant.isOnline*/) {
                     String bericht;
-                    System.out.println("in runnable");
+//                    System.out.println("in runnable");
                     try {
                         bericht = klant.clientReceive();
                         if(bericht!=null){
@@ -53,7 +53,7 @@ public class MainClient {
                 }
             };
             ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-            executor.scheduleAtFixedRate(helloRunnable, 0, 1, TimeUnit.MILLISECONDS);
+            executor.scheduleAtFixedRate(helloRunnable, 0, 1, TimeUnit.SECONDS);
 
 //            while (true) {
 //                if (klant.gebumped /*&& klant.isOnline*/) {
