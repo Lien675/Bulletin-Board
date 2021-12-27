@@ -4,8 +4,14 @@ import Interface.Communicatie;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.*;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class MainClient {
     static Client klant;
@@ -24,20 +30,46 @@ public class MainClient {
         ta.setForeground(Color.WHITE);
         ta.setColumns(2);
         ta.setEditable(false);
+
+
         Thread updateThread = new Thread(() -> {
-            while (true) {
-                if (klant.gebumped) {
+
+            Runnable helloRunnable = () -> {
+                if (klant.gebumped /*&& klant.isOnline*/) {
                     String bericht;
+                    System.out.println("in runnable");
                     try {
                         bericht = klant.clientReceive();
-                        ta.append(/*"Chat partner: " + */bericht);
-                        ta.append("\n");
-                        System.out.println(bericht);
+                        if(bericht!=null){
+                            System.out.println("ontvangen bericht in updateThread: "+bericht);
+                            ta.append(/*"Chat partner: " + */bericht);
+                            ta.append("\n");
+                            System.out.println(bericht);
+                        }
+
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
-            }
+            };
+            ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
+            executor.scheduleAtFixedRate(helloRunnable, 0, 1, TimeUnit.MILLISECONDS);
+
+//            while (true) {
+//                if (klant.gebumped /*&& klant.isOnline*/) {
+//                    String bericht;
+//                    System.out.println("in whillllle");
+//                    try {
+//                        bericht = klant.clientReceive();
+//                        System.out.println("ontvangen bericht in updateThread: "+bericht);
+//                        ta.append(/*"Chat partner: " + */bericht);
+//                        ta.append("\n");
+//                        System.out.println(bericht);
+//                    } catch (Exception e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//            }
         });
 
         //Creating the panel at bottom and adding components
@@ -67,13 +99,33 @@ public class MainClient {
         JTextField poortTf = new JTextField(10); // accepts upto 10 characters
         poortTf.setText("30123");
         JButton submit = new JButton("Ok");
+        //JButton goOnline = new JButton("Go Online");
         submit.addActionListener(e -> {
             try {
-                setParams(naamTf.getText(), poortTf.getText(), submit, send, updateThread);
+                setParams(naamTf.getText(), poortTf.getText(), submit, send, updateThread/*, goOnline*/);
+
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
         });
+
+//        goOnline.addActionListener(e -> {
+//            try {
+//                if(goOnline.getText().contentEquals("Go Online")){
+//                    klant.isOnline = true;
+//                    ta.append("Je bent online. Veel chat plezier!");
+//                    ta.append("\n");
+//                    goOnline.setEnabled(false);
+//                        updateThread.start();
+//                        Thread tempThread= updateThread;
+//                }
+//
+//
+//            } catch (Exception ex) {
+//                ex.printStackTrace();
+//            }
+//        });
+
         submit.setEnabled(true);
         JPanel configPanel = new JPanel();
         configPanel.add(naamLabel);
@@ -81,6 +133,9 @@ public class MainClient {
         configPanel.add(poortLabel);
         configPanel.add(poortTf);
         configPanel.add(submit);
+
+//        goOnline.setEnabled(false);
+//        configPanel.add(goOnline);
 
         JButton reset = new JButton("Reset");
         JButton clear = new JButton("Clear");
@@ -129,7 +184,7 @@ public class MainClient {
 //        int tagab = random.nextInt();
     }
 
-    private static void setParams(String naam, String poorttekst, JButton submit, JButton send, Thread updateThread) throws Exception {
+    private static void setParams(String naam, String poorttekst, JButton submit, JButton send, Thread updateThread/*, JButton goOnline*/) throws Exception {
         int poort;
         if (naam.isEmpty() || naam.isBlank()) return;
         try {
@@ -143,8 +198,16 @@ public class MainClient {
             submit.setEnabled(false);
             send.setEnabled(true);
 
+//            goOnline.setEnabled(true);
+
             klant = new Client(naam, poort, commImpl);
-            klant.clientBump();
+
+            if(!klant.gebumped){
+                System.out.println("in if van is client gebumped");
+
+                klant.clientBump();
+            }
+
 
             updateThread.start();
         } catch (NumberFormatException ignored) {

@@ -32,13 +32,14 @@ public class CommunicatieImpl extends UnicastRemoteObject implements Communicati
         board.get(moduloIndex).get(tag);
 
         //wacht als geen bericht aanwezig is op plaats index, met key = tag
-        while (!board.get(moduloIndex).containsKey(tag)) {
-            try {
-                wait();
-            } catch (InterruptedException e) {
-                System.out.println(Arrays.toString(e.getStackTrace()));
-            }
-        }
+        if(!board.get(moduloIndex).containsKey(tag)) return null;
+//        while (!board.get(moduloIndex).containsKey(tag)) {
+//            try {
+//                wait();
+//            } catch (InterruptedException e) {
+//                System.out.println(Arrays.toString(e.getStackTrace()));
+//            }
+//        }
 
         byte[] hashedBericht = board.get(moduloIndex).get(tag);
         board.get(moduloIndex).remove(tag);

@@ -4,14 +4,15 @@ import Interface.Bump;
 import Interface.Communicatie;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
+import java.io.IOException;
 import java.rmi.ConnectException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.security.MessageDigest;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 import static Client.Crypto.*;
 
@@ -27,38 +28,55 @@ class Client {
     Communicatie impl;
     boolean gebumped = false;
     String naam;
+    boolean isOnline = false;
+
 
     public Client(String naam, int poort, Communicatie com) throws Exception {
-        try {
-            // Zoek als al iemand verbinding wil maken
-            // fire to localhost port
-            Registry bumpRegistry = LocateRegistry.getRegistry("localhost", poort);
-            // search for BumpService
-            this.bumpImpl = (Bump) bumpRegistry.lookup("BumpService");
-        } catch (ConnectException e) {
-            // Anders zelf hosten
-            // create on port
-            Registry registry = LocateRegistry.createRegistry(poort);
-            // create a new service named CounterService
-            registry.rebind("BumpService", new BumpImpl());
-            // fire to localhost port
-            Registry bumpRegistry = LocateRegistry.getRegistry("localhost", poort);
-            // search for BumpService
-            this.bumpImpl = (Bump) bumpRegistry.lookup("BumpService");
+        //check of client al ooit eens gebumped heeft
+
+        boolean ooitAlGebumped = FileBeheer.bestaatFile(naam);
+
+        if(ooitAlGebumped){
+
+            List<String> waarden = FileBeheer.readFromFile(naam);
+            setWaarden(waarden);
+            gebumped=true;
+
         }
 
-        eigenSecretKey = createAESKey();
-        //random index voor eerste bericht
-        eigenIndex = Math.abs(random.nextInt()); //bound moet waarschijnlijk = lengte van board
-        //random tag voor bericht voor eerste bericht
-        eigenTag = Math.abs(random.nextInt());
+        else{
+            try {
+                // Zoek of al iemand verbinding wil maken
+                // fire to localhost port
+                Registry bumpRegistry = LocateRegistry.getRegistry("localhost", poort);
+                // search for BumpService
+                this.bumpImpl = (Bump) bumpRegistry.lookup("BumpService");
+            } catch (ConnectException e) {
+                // Anders zelf hosten
+                // create on port
+                Registry registry = LocateRegistry.createRegistry(poort);
+                // create a new service named CounterService
+                registry.rebind("BumpService", new BumpImpl());
+                // fire to localhost port
+                Registry bumpRegistry = LocateRegistry.getRegistry("localhost", poort);
+                // search for BumpService
+                this.bumpImpl = (Bump) bumpRegistry.lookup("BumpService");
+            }
+
+            eigenSecretKey = createAESKey();
+            //random index voor eerste bericht
+            eigenIndex = Math.abs(random.nextInt());
+            //random tag voor bericht voor eerste bericht
+            eigenTag = Math.abs(random.nextInt());
+        }
+
 
         this.naam = naam;
         this.impl = com;
     }
 
     //TODO: DEZE METHODE IS TIJDELIJK TER VERVANGING VAN EEN SHORT RANGE TRANSMISSION PROTOCOL
-    public void clientBump() throws RemoteException {
+    public void clientBump() throws IOException {
 
         bumpImpl.bumpDeel1(eigenSecretKey, eigenIndex, eigenTag);
         Map<String, SecretKey> bumpResult = bumpImpl.bumpDeel2(eigenTag + "-" + eigenIndex);
@@ -71,11 +89,13 @@ class Client {
             System.out.println("Parnters key = " + (DatatypeConverter.printHexBinary(partnersSecretKey.getEncoded())));
         }
 
+        FileBeheer.writeToFile(getWaarenList(),naam);
+
         gebumped = true;
     }
 
     public String clientReceive() throws Exception {
-
+        System.out.println("in client receive begin");
         //neem hash van partners tag
 //        MessageDigest digest = MessageDigest.getInstance("SHA-256");
 //        byte[] hashedTag = digest.digest(Integer.toString(partnersTag).getBytes());
@@ -85,6 +105,9 @@ class Client {
 //        byte[] u = impl.ontvangBericht(hashedStringTag, partnersIndex);
         byte[] u = impl.ontvangBericht(partnersTag, partnersIndex);
 
+        if(u==null)return null;
+
+        System.out.println("in client receive na ontvangBericht");
         //decrypt bericht
         String decryptedMessage = doAESDecryption(u, partnersSecretKey);
         String[] decryptedParts = decryptedMessage.split("-");
@@ -103,6 +126,9 @@ class Client {
         partnersSecretKey = deriveKey(partnersSecretKey);
 
         System.out.println("ONTVANGEN BERICHT: " + message);
+
+        FileBeheer.writeToFile(getWaarenList(),naam);
+
         return message;
     }
 
@@ -134,6 +160,54 @@ class Client {
         eigenIndex = idxab;
         eigenTag = tagab;
         eigenSecretKey = deriveKey(eigenSecretKey);
+
+        FileBeheer.writeToFile(getWaarenList(),naam);
+
+    }
+
+    private void setWaarden(List<String>waarden){
+
+        String eigenSK = waarden.get(0);
+        String partnerSK = waarden.get(1);
+        String eigenInd = waarden.get(2);
+        String partnerInd = waarden.get(3);
+        String eigenT = waarden.get(4);
+        String partnerT = waarden.get(5);
+
+
+        // reconstrueer eigen key
+        byte[] decodedKey1 = Base64.getDecoder().decode(eigenSK);
+        eigenSecretKey = new SecretKeySpec(decodedKey1, 0, decodedKey1.length, "AES");
+        //reconstrueer partner key
+        byte[] decodedKey2 = Base64.getDecoder().decode(partnerSK);
+        partnersSecretKey = new SecretKeySpec(decodedKey2, 0, decodedKey2.length, "AES");
+
+        eigenIndex = Integer.parseInt(eigenInd);
+        partnersIndex = Integer.parseInt(partnerInd);
+        eigenTag = Integer.parseInt(eigenT);
+        partnersTag = Integer.parseInt(partnerT);
+
+    }
+
+    public List<String> getWaarenList(){
+        List<String> waarden = new ArrayList<>();
+
+        String eigenKey = Base64.getEncoder().encodeToString(eigenSecretKey.getEncoded());
+        String partnerKey = Base64.getEncoder().encodeToString(partnersSecretKey.getEncoded());
+
+//
+//        byte[] decodedKey1 = Base64.getDecoder().decode(eigenKey);
+//        SecretKey gereconstruuerdeEigenKey = new SecretKeySpec(decodedKey1, 0, decodedKey1.length, "AES");
+
+        waarden.add(eigenKey);
+        waarden.add(partnerKey);
+        waarden.add(Integer.toString(eigenIndex));
+        waarden.add(Integer.toString(partnersIndex));
+        waarden.add(Integer.toString(eigenTag));
+        waarden.add(Integer.toString(partnersTag));
+
+        return waarden;
+
     }
 
 }
