@@ -8,16 +8,14 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
 public class MainClient {
+    static Client klant;
 
-    public static void main(String[] args) throws Exception {
-        // fire to localhost port 1099
-        Registry myRegistry = LocateRegistry.getRegistry("localhost", 1099);
+    public static void main(String[] args) {
+        //GUI
+        JFrame frame = new JFrame("Chat Frame");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setSize(600, 400);
 
-        // search for CommService
-        Communicatie impl = (Communicatie) myRegistry.lookup("CommService");
-
-        Client klant = new Client(impl);
-        klant.clientBump();
 
         // Text Area at the Center
         JTextArea ta = new JTextArea();
@@ -26,11 +24,21 @@ public class MainClient {
         ta.setForeground(Color.WHITE);
         ta.setColumns(2);
         ta.setEditable(false);
-
-        //GUI
-        JFrame frame = new JFrame("Chat Frame");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(400, 200);
+        Thread updateThread = new Thread(() -> {
+            while (true) {
+                if (klant.gebumped) {
+                    String bericht;
+                    try {
+                        bericht = klant.clientReceive();
+                        ta.append(/*"Chat partner: " + */bericht);
+                        ta.append("\n");
+                        System.out.println(bericht);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
 
         //Creating the panel at bottom and adding components
         JPanel panel = new JPanel(); // the panel is not visible in output
@@ -50,6 +58,29 @@ public class MainClient {
                 tf.setText("");
             }
         });
+        send.setEnabled(false);
+
+        // Config
+        JLabel naamLabel = new JLabel("Gebruikersnaam: ");
+        JTextField naamTf = new JTextField(10); // accepts upto 10 characters
+        JLabel poortLabel = new JLabel("Poortnummer: ");
+        JTextField poortTf = new JTextField(10); // accepts upto 10 characters
+        poortTf.setText("30123");
+        JButton submit = new JButton("Ok");
+        submit.addActionListener(e -> {
+            try {
+                setParams(naamTf.getText(), poortTf.getText(), submit, send, updateThread);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        });
+        submit.setEnabled(true);
+        JPanel configPanel = new JPanel();
+        configPanel.add(naamLabel);
+        configPanel.add(naamTf);
+        configPanel.add(poortLabel);
+        configPanel.add(poortTf);
+        configPanel.add(submit);
 
         JButton reset = new JButton("Reset");
         JButton clear = new JButton("Clear");
@@ -62,25 +93,9 @@ public class MainClient {
         //Adding Components to the frame.
         frame.getContentPane().add(BorderLayout.SOUTH, panel);
         frame.getContentPane().add(BorderLayout.CENTER, ta);
+        frame.getContentPane().add(BorderLayout.NORTH, configPanel);
         frame.setVisible(true);
         clear.addActionListener(e -> ta.setText(""));
-
-        Thread t = new Thread(() -> {
-            while (true) {
-                if (klant.gebumped) {
-                    String bericht;
-                    try {
-                        bericht = klant.clientReceive();
-                        ta.append("Chat partner: " + bericht);
-                        ta.append("\n");
-                        System.out.println(bericht);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
-        t.start();
 
         //keys:
 //        SecretKey Symmetrickey = createAESKey();
@@ -112,6 +127,28 @@ public class MainClient {
 //        int idxab = random.nextInt(); //bound moet waarschijnlijk = lengte van board
 //        //random tag voor bericht voor eerste bericht
 //        int tagab = random.nextInt();
+    }
+
+    private static void setParams(String naam, String poorttekst, JButton submit, JButton send, Thread updateThread) throws Exception {
+        int poort;
+        if (naam.isEmpty() || naam.isBlank()) return;
+        try {
+            poort = Integer.parseInt(poorttekst);
+
+            // fire to localhost port 1099
+            Registry myRegistry = LocateRegistry.getRegistry("localhost", 1099);
+            // search for CommService
+            Communicatie commImpl = (Communicatie) myRegistry.lookup("CommService");
+
+            submit.setEnabled(false);
+            send.setEnabled(true);
+
+            klant = new Client(naam, poort, commImpl);
+            klant.clientBump();
+
+            updateThread.start();
+        } catch (NumberFormatException ignored) {
+        }
     }
 
 }
