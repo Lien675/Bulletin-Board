@@ -6,6 +6,8 @@ import javax.crypto.SecretKey;
 import javax.xml.bind.DatatypeConverter;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
 public class CommunicatieImpl extends UnicastRemoteObject implements Communicatie {
@@ -19,8 +21,13 @@ public class CommunicatieImpl extends UnicastRemoteObject implements Communicati
 
     @Override
     // stuurt bericht naar de client
-    public synchronized byte[] ontvangBericht(String tag, int index) throws RemoteException {
+    public synchronized byte[] ontvangBericht(int preimage, int index) throws RemoteException, NoSuchAlgorithmException {
+        //neem hash van partners tag
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] hashedTag = digest.digest(Integer.toString(preimage).getBytes());
+        String tag = DatatypeConverter.printHexBinary(hashedTag);
 
+        System.out.println("IN ONTVANG");
         int moduloIndex = index % board.size();
         board.get(moduloIndex).get(tag);
 

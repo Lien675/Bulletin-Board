@@ -77,12 +77,13 @@ class Client {
     public String clientReceive() throws Exception {
 
         //neem hash van partners tag
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        byte[] hashedTag = digest.digest(Integer.toString(partnersTag).getBytes());
-        String hashedStringTag = DatatypeConverter.printHexBinary(hashedTag);
+//        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+//        byte[] hashedTag = digest.digest(Integer.toString(partnersTag).getBytes());
+//        String hashedStringTag = DatatypeConverter.printHexBinary(hashedTag);
 
         //returned string zodra bericht aanwezig op plaats partnersIndex met key partnersTag
-        byte[] u = impl.ontvangBericht(hashedStringTag, partnersIndex);
+//        byte[] u = impl.ontvangBericht(hashedStringTag, partnersIndex);
+        byte[] u = impl.ontvangBericht(partnersTag, partnersIndex);
 
         //decrypt bericht
         String decryptedMessage = doAESDecryption(u, partnersSecretKey);
