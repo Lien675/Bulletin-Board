@@ -27,7 +27,6 @@ public class CommunicatieImpl extends UnicastRemoteObject implements Communicati
         byte[] hashedTag = digest.digest(Integer.toString(preimage).getBytes());
         String tag = DatatypeConverter.printHexBinary(hashedTag);
 
-        System.out.println("IN ONTVANG");
         int moduloIndex = index % board.size();
         board.get(moduloIndex).get(tag);
 

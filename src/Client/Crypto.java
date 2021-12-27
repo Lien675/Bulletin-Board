@@ -41,7 +41,6 @@ public class Crypto {
         return key;
     }
 
-    //TODO: FIX (dit mag denk ik niet hard gecodeert maar werkt voorlopig anders niet)
     // Function to initialize a vector with an arbitrary value
     public static byte[] createInitializationVector(SecretKey key) {
         // Used with encryption

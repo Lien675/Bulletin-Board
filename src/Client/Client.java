@@ -95,7 +95,7 @@ class Client {
     }
 
     public String clientReceive() throws Exception {
-        System.out.println("in client receive begin");
+//        System.out.println("in client receive begin");
         //neem hash van partners tag
 //        MessageDigest digest = MessageDigest.getInstance("SHA-256");
 //        byte[] hashedTag = digest.digest(Integer.toString(partnersTag).getBytes());

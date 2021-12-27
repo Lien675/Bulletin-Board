@@ -101,12 +101,20 @@ public class MainClient {
         JButton submit = new JButton("Ok");
         //JButton goOnline = new JButton("Go Online");
         submit.addActionListener(e -> {
-            try {
-                setParams(naamTf.getText(), poortTf.getText(), submit, send, updateThread/*, goOnline*/);
+            new Thread(() -> {
+                try {
+                    setParams(naamTf.getText(), poortTf.getText(), submit, send, updateThread);
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }).start();
 
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
+//            try {
+//                setParams(naamTf.getText(), poortTf.getText(), submit, send, updateThread/*, goOnline*/);
+//
+//            } catch (Exception ex) {
+//                ex.printStackTrace();
+//            }
         });
 
 //        goOnline.addActionListener(e -> {
@@ -195,12 +203,12 @@ public class MainClient {
             // search for CommService
             Communicatie commImpl = (Communicatie) myRegistry.lookup("CommService");
 
-            submit.setEnabled(false);
-            send.setEnabled(true);
+
 
 //            goOnline.setEnabled(true);
 
             klant = new Client(naam, poort, commImpl);
+            System.out.println("KLANT MET NAAM:"+naam);
 
             if(!klant.gebumped){
                 System.out.println("in if van is client gebumped");
@@ -208,6 +216,8 @@ public class MainClient {
                 klant.clientBump();
             }
 
+            submit.setEnabled(false);
+            send.setEnabled(true);
 
             updateThread.start();
         } catch (NumberFormatException ignored) {
