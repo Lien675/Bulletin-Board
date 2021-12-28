@@ -25,7 +25,7 @@ public class CommunicatieImpl extends UnicastRemoteObject implements Communicati
 
     Thread changeBoardSizeThread = new Thread(() -> {
         Runnable helloRunnable = () -> {
-            if (isFullBoard(board) && boardOld.isEmpty()) {
+            if (isFullBoard(board) && !twoBoards) {
                 try {
                     boardOld = deepCopyOfBoard(board);
                     board = new ArrayList<>();
@@ -38,7 +38,7 @@ public class CommunicatieImpl extends UnicastRemoteObject implements Communicati
                     e.printStackTrace();
                 }
             }
-            else if(isTooEmptyBoard(board) && boardOld.isEmpty()) {
+            else if(isTooEmptyBoard(board) && !twoBoards) {
                 try {
                     boardOld = deepCopyOfBoard(board);
                     differenceOld = difference;
