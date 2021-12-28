@@ -30,6 +30,7 @@ class Client {
     String naam;
     boolean isOnline = false;
     int poort;
+    int aantalTokens = 5;
 
     public Client(String naam, int poort, Communicatie com) throws Exception {
         //check of client al ooit eens gebumped heeft
@@ -127,6 +128,8 @@ class Client {
 
         FileBeheer.writeToFile(getWaarenList(), naam, poort);
 
+        aantalTokens++;
+
         return message;
     }
 
@@ -160,6 +163,8 @@ class Client {
         eigenSecretKey = deriveKey(eigenSecretKey);
 
         FileBeheer.writeToFile(getWaarenList(), naam, poort);
+
+        aantalTokens--;
 
     }
 

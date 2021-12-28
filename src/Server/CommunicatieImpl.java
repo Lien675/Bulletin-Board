@@ -91,9 +91,8 @@ public class CommunicatieImpl extends UnicastRemoteObject implements Communicati
     }
 
     protected CommunicatieImpl() throws RemoteException {
-        //De initiële grootte van het bord is 2. Deze waarde is fixed, achteraf kan een groter of kleiner bord aangemaakt worden.
-        //Ik heb 2 genomen zodat ik snel kan checken of het werkt om het bord groter te maken, initieel op 20 zal een beter idee zijn eens alles getest is.
-        currentSize = 2;
+        //De initiële grootte van het bord is 20. Deze waarde is fixed, achteraf kan een groter of kleiner bord aangemaakt worden.
+        currentSize = 20;
         for (int i = 0; i < currentSize; i++) {
             board.add(new HashMap<>());
         }
