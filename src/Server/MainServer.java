@@ -9,7 +9,7 @@ public class MainServer  {
             // create on port 1099
             Registry registry = LocateRegistry.createRegistry(1099);
 
-            // create a new service named CounterService
+            // create a new service named CommService
             registry.rebind("CommService", new CommunicatieImpl());
         } catch (Exception e) {
             e.printStackTrace();

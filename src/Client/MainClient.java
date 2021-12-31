@@ -80,14 +80,21 @@ public class MainClient {
         send.addActionListener(e -> {
             String s = tf.getText();
             if (s != null && klant.gebumped) {
-                try {
-                    ta.append("ik: " + s);
-                    ta.append("\n");
-                    klant.clientSend(s);
-                } catch (Exception ex) {
-                    ex.printStackTrace();
+                if(klant.aantalTokens>0) {
+                    try {
+                        ta.append("ik: " + s);
+                        ta.append("\n");
+                        klant.clientSend(s);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                    tf.setText("");
                 }
-                tf.setText("");
+                else {
+                    ta.append("Automatic Response: Je hebt geen tokens meer om een bericht te verzenden. Ontvang eerst een bericht.");
+                    ta.append("\n");
+                }
+
             }
         });
         send.setEnabled(false);
