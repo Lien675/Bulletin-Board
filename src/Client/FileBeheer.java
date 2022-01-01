@@ -1,28 +1,19 @@
 package Client;
 
-import javax.crypto.SecretKey;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class FileBeheer {
     public static boolean bestaatFile(String naam, int poort) throws IOException { //return true als file al bestond
-
         String s = naam + poort + ".txt";
         File file = new File(s);
 
         boolean exists = file.exists();
         if (exists) {
-            System.out.println("file bestond al");
             return true;
         } else {
-            boolean result = file.createNewFile();
-
-            if(result) System.out.println("File created");
-
-            else System.out.println("file already existed");
-
-            return false;
+            return file.createNewFile();
         }
     }
 
@@ -40,8 +31,6 @@ public class FileBeheer {
     }
 
     public static void writeToFile(List<String> waarden, String naam, int poort) throws IOException {
-        System.out.println("in write to file");
-
         StringBuilder sb = new StringBuilder();
 
         for (String s : waarden) {
@@ -53,14 +42,7 @@ public class FileBeheer {
 
         FileWriter myWriter = new FileWriter(naam + poort + ".txt");
         myWriter.flush();
-
         myWriter.write(waard);
-//        for(String value: waarden){
-//            System.out.println(value);
-//            myWriter.append(value);
-//            myWriter.append("\n");
-//        }
-
         myWriter.close();
     }
 

@@ -7,5 +7,6 @@ import java.util.Map;
 
 public interface Bump extends Remote {
     void bumpDeel1(SecretKey eigenSecretKey, int eigenIndex, int eigenTag) throws RemoteException;
+
     Map<String, SecretKey> bumpDeel2(String eigenTag) throws RemoteException;
 }
